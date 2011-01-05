@@ -153,6 +153,9 @@ public class WebLinkHandler extends ChainedMessageHandler {
         if (entity != null) {
             InputStream instream = null;
             try {
+                if (!entity.getContentType().getValue().contains("text")) {
+                    return null;
+                }
                 instream = entity.getContent();
                 BufferedReader reader = new BufferedReader(
                         new InputStreamReader(instream));
