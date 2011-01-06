@@ -1,7 +1,6 @@
 package com.gmail.rretzbach.ircbot.handler;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -22,6 +21,8 @@ import org.schwering.irc.lib.IRCConnection;
 
 public class WebLinkHandler extends ChainedMessageHandler {
     private static Logger log = Logger.getLogger(WebLinkHandler.class);
+
+    private static final int FETCH_LIMIT_CHARS = 5000;
 
     @Override
     public void handleMessage(IRCConnection conn, String target, String user,
@@ -58,7 +59,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
                 String decodedTitle = StringEscapeUtils.unescapeHtml(title);
                 titles.add(decodedTitle);
             } catch (Exception e) {
-                continue;
+                log.error("Error while fetching titles", e);
             }
         }
 
@@ -130,6 +131,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
         }
     }
 
+    // TODO: don't download the full content of the link
     protected String fetchPageForCorrectLink(String link) {
 
         StringBuilder sb = new StringBuilder();
@@ -139,7 +141,8 @@ public class WebLinkHandler extends ChainedMessageHandler {
         try {
             httpget = new HttpGet(link);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(String.format(
+                    "error while building uri from %s", link), e);
         }
         HttpResponse response;
         HttpEntity entity = null;
@@ -147,7 +150,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
             response = httpclient.execute(httpget);
             entity = response.getEntity();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("error while executing http get", e);
         }
 
         if (entity != null) {
@@ -162,22 +165,24 @@ public class WebLinkHandler extends ChainedMessageHandler {
 
                 String line = null;
                 while ((line = reader.readLine()) != null) {
+                    // stop if otherwise limit would be surpassed
+                    if (sb.length() + line.length() >= FETCH_LIMIT_CHARS) {
+                        break;
+                    }
                     sb.append(line);
+                    // stop if you can
+                    if (line.matches("(?i).*</title>.*")) {
+                        break;
+                    }
                     sb.append("\n");
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException(String.format(
+                        "error while fetching %s", link), e);
             } finally {
-                if (instream != null) {
-                    try {
-                        instream.close();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                httpclient.getConnectionManager().shutdown();
             }
         }
-        httpclient.getConnectionManager().shutdown();
 
         return sb.toString();
     }

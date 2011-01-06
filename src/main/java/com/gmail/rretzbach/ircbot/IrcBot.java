@@ -37,8 +37,8 @@ public class IrcBot extends IRCEventAdapter {
         connInfo.setRealName("Ostwind's Bot");
         connInfo.setPortMaximum(6669);
         connInfo.setPortMinimum(6667);
-        connInfo.setChannel("#vegan");
-        // connInfo.setChannel("#vegan-test");
+        // connInfo.setChannel("#vegan");
+        connInfo.setChannel("#vegan-test");
         return connInfo;
     }
 
