@@ -8,6 +8,7 @@ import org.schwering.irc.lib.IRCEventAdapter;
 import org.schwering.irc.lib.IRCUser;
 
 import com.gmail.rretzbach.ircbot.handler.MessageHandler;
+import com.gmail.rretzbach.ircbot.handler.TapirWordHandler;
 import com.gmail.rretzbach.ircbot.handler.WebLinkHandler;
 
 public class IrcBot extends IRCEventAdapter {
@@ -23,7 +24,11 @@ public class IrcBot extends IRCEventAdapter {
         log.info("Program started");
         IrcBotConfig connInfo = loadIrcConnectionInfo();
         IrcBot ircBot = new IrcBot(connInfo);
-        ircBot.setMessageHandler(new WebLinkHandler());
+        MessageHandler webLinkHandler = new WebLinkHandler();
+        TapirWordHandler tapirWordHandler = new TapirWordHandler();
+        tapirWordHandler.loadFactsFromFile("tapirfacts.txt");
+        webLinkHandler.setNextMessageHandler(tapirWordHandler);
+        ircBot.setMessageHandler(webLinkHandler);
         ircBot.connectAndStayConnected();
         log.info("Program exited");
     }
@@ -37,8 +42,8 @@ public class IrcBot extends IRCEventAdapter {
         connInfo.setRealName("Ostwind's Bot");
         connInfo.setPortMaximum(6669);
         connInfo.setPortMinimum(6667);
-        // connInfo.setChannel("#vegan");
-        connInfo.setChannel("#vegan-test");
+        connInfo.setChannel("#vegan");
+        // connInfo.setChannel("#vegan-test");
         return connInfo;
     }
 
@@ -58,7 +63,7 @@ public class IrcBot extends IRCEventAdapter {
             this.connection = createIrcConnection();
             this.connection.connect();
         } catch (Exception ioexc) {
-            log.error("error while connecting", ioexc);
+            log.error("Error while connecting", ioexc);
             reconnect();
         }
     }
@@ -67,7 +72,7 @@ public class IrcBot extends IRCEventAdapter {
      * Waits 5 seconds before trying to reconnect
      */
     protected void reconnect() {
-        log.info("reconnecting");
+        log.info("Reconnecting");
         try {
             Thread.sleep(RECONNECT_DELAY_SECS);
         } catch (InterruptedException e) {}
@@ -91,13 +96,21 @@ public class IrcBot extends IRCEventAdapter {
 
     @Override
     public void onRegistered() {
-        log.info("connected");
-        connection.doJoin(config.getChannel());
+        log.info("Connected");
+        getConnection().doJoin(getConfiguredChannel());
+    }
+
+    public IRCConnection getConnection() {
+        return connection;
+    }
+
+    public String getConfiguredChannel() {
+        return config.getChannel();
     }
 
     @Override
     public void onDisconnected() {
-        log.error("disconnected");
+        log.info("Disconnected");
         reconnect();
     }
 
@@ -107,7 +120,7 @@ public class IrcBot extends IRCEventAdapter {
             return;
         }
 
-        log.debug(String.format("incoming message: [target=%s;nick=%s;msg=%s]",
+        log.debug(String.format("Incoming message: [target=%s;nick=%s;msg=%s]",
                 target, user.getNick(), msg));
         messageHandler.handleMessage(connection, target, user.getNick(), msg);
     }

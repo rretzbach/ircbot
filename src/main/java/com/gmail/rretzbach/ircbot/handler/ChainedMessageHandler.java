@@ -7,7 +7,7 @@ public abstract class ChainedMessageHandler implements MessageHandler {
 
     @Override
     public abstract void handleMessage(IRCConnection conn, String target,
-            String user, String message);
+            String nick, String message);
 
     @Override
     public MessageHandler getNextMessageHandler() {

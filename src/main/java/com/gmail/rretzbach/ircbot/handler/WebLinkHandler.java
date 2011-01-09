@@ -25,9 +25,9 @@ public class WebLinkHandler extends ChainedMessageHandler {
     private static final int FETCH_LIMIT_CHARS = 5000;
 
     @Override
-    public void handleMessage(IRCConnection conn, String target, String user,
+    public void handleMessage(IRCConnection conn, String target, String nick,
             String message) {
-        if (isHandlingRequired(message)) {
+        if (isHandlingRequired(conn, target, nick, message)) {
             List<String> links = extractLinks(message);
             List<String> titles = fetchTitles(links);
             if (!titles.isEmpty()) {
@@ -35,17 +35,16 @@ public class WebLinkHandler extends ChainedMessageHandler {
                 try {
                     conn.doPrivmsg(target, finalMessage);
                 } catch (Exception e) {
-                    log.error("error while sending message", e);
+                    log.error("Error while sending message", e);
                     log.debug(String.format(
-                            "tried to send message %s to target %s",
+                            "Tried to send message %s to target %s",
                             finalMessage, target));
                 }
             }
-        } else {
-            MessageHandler handler = getNextMessageHandler();
-            if (handler != null) {
-                handler.handleMessage(conn, target, user, message);
-            }
+        }
+        MessageHandler handler = getNextMessageHandler();
+        if (handler != null) {
+            handler.handleMessage(conn, target, nick, message);
         }
     }
 
@@ -82,12 +81,16 @@ public class WebLinkHandler extends ChainedMessageHandler {
         return ret;
     }
 
-    protected boolean isHandlingRequired(String message) {
+    protected boolean isHandlingRequired(IRCConnection conn, String target,
+            String nick, String message) {
         Pattern url = Pattern.compile("http://|www\\.\\w+\\.\\w+(?= |$)",
                 Pattern.CASE_INSENSITIVE);
         Matcher matcher = url.matcher(message);
+        boolean containsLink = matcher.find();
 
-        return matcher.find();
+        boolean myMessage = conn.getNick().equals(nick);
+
+        return containsLink && !myMessage;
     }
 
     protected String buildTitleMessage(List<String> titles) {
@@ -142,7 +145,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
             httpget = new HttpGet(link);
         } catch (Exception e) {
             throw new RuntimeException(String.format(
-                    "error while building uri from %s", link), e);
+                    "Error while building uri from %s", link), e);
         }
         HttpResponse response;
         HttpEntity entity = null;
@@ -150,7 +153,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
             response = httpclient.execute(httpget);
             entity = response.getEntity();
         } catch (Exception e) {
-            throw new RuntimeException("error while executing http get", e);
+            throw new RuntimeException("Error while executing http get", e);
         }
 
         if (entity != null) {
@@ -178,7 +181,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
                 }
             } catch (Exception e) {
                 throw new RuntimeException(String.format(
-                        "error while fetching %s", link), e);
+                        "Error while fetching %s", link), e);
             } finally {
                 httpclient.getConnectionManager().shutdown();
             }

@@ -7,7 +7,6 @@ import java.util.List;
 
 import junit.framework.Assert;
 
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.schwering.irc.lib.IRCConnection;
@@ -23,9 +22,11 @@ public class WebLinkHandlerTest {
 
     @Test
     public void shouldIgnoreMessagesWithoutLink() {
-        IRCConnection mock = createMock(IRCConnection.class);
+        IRCConnection mock = createNiceMock(IRCConnection.class);
+        String nick = "Scirocco";
+        expect(mock.getNick()).andReturn(nick);
         replay(mock);
-        handler.handleMessage(mock, "#channel", null,
+        handler.handleMessage(mock, "#channel", "nick",
                 "Message without link in it.");
         verify(mock);
     }
@@ -34,8 +35,7 @@ public class WebLinkHandlerTest {
     public void shouldNotSendMessageWithoutTitles() {
         IRCConnection mockConnection = createMock(IRCConnection.class);
         WebLinkHandler mock = createNiceMock(WebLinkHandler.class);
-        EasyMock.expect(mock.fetchTitles(null)).andStubReturn(
-                new ArrayList<String>());
+        expect(mock.fetchTitles(null)).andStubReturn(new ArrayList<String>());
         replay(mock);
         replay(mockConnection);
         mock.handleMessage(mockConnection, "#channel", null,
@@ -46,10 +46,12 @@ public class WebLinkHandlerTest {
 
     @Test
     public void shouldSendPrivMsg() {
-        IRCConnection mock = createStrictMock(IRCConnection.class);
+        IRCConnection mock = createNiceMock(IRCConnection.class);
         mock.doPrivmsg("#channel", "\"Google\"");
+        String nick = "Scirocco";
+        expect(mock.getNick()).andReturn(nick);
         replay(mock);
-        handler.handleMessage(mock, "#channel", null,
+        handler.handleMessage(mock, "#channel", "nick",
                 "\"Test with http://www.google.de \"");
         verify(mock);
     }
@@ -106,15 +108,27 @@ public class WebLinkHandlerTest {
     @Test
     public void shouldRequireHandlingForHTTPLink() {
         String message = "Check out http://www.google.de";
-        boolean containsLink = handler.isHandlingRequired(message);
-        Assert.assertTrue(containsLink);
+        String nick = "Scirocco";
+        IRCConnection mockConnection = createMock(IRCConnection.class);
+        expect(mockConnection.getNick()).andReturn(nick);
+        replay(mockConnection);
+        boolean handlingRequired = handler.isHandlingRequired(mockConnection,
+                null, "nick", message);
+        verify(mockConnection);
+        Assert.assertTrue(handlingRequired);
     }
 
     @Test
     public void shouldRequireHandlingForWWWLink() {
         String message = "Check out www.google.de";
-        boolean containsLink = handler.isHandlingRequired(message);
-        Assert.assertTrue(containsLink);
+        String nick = "Scirocco";
+        IRCConnection mockConnection = createMock(IRCConnection.class);
+        expect(mockConnection.getNick()).andReturn(nick);
+        replay(mockConnection);
+        boolean handlingRequired = handler.isHandlingRequired(mockConnection,
+                null, "nick", message);
+        verify(mockConnection);
+        Assert.assertTrue(handlingRequired);
     }
 
     @Test
@@ -124,4 +138,23 @@ public class WebLinkHandlerTest {
             Assert.fail("Should throw error");
         } catch (Exception e) {}
     }
+
+    @Test
+    public void shouldNotRequireHandlingOwnMessages() {
+        String message = "Check out www.google.de";
+        String nick = "Scirocco";
+        IRCConnection mockConnection = createMock(IRCConnection.class);
+        expect(mockConnection.getNick()).andReturn(nick);
+        replay(mockConnection);
+        boolean handlingRequired = handler.isHandlingRequired(mockConnection,
+                null, nick, message);
+        verify(mockConnection);
+        Assert.assertFalse(handlingRequired);
+    }
+
+    // limit content
+
+    // content type
+
+    // stop stream on </title>
 }

@@ -3,7 +3,7 @@ IrcBot
 
 Compile
 -------
-   mvn -Dmaven.test.skip=true package
+   mvn package
 
 Run
 ---
