@@ -1,5 +1,7 @@
 package com.gmail.rretzbach.ircbot.handler;
 
+import java.util.ArrayList;
+
 import junit.framework.Assert;
 
 import org.junit.Before;
@@ -36,12 +38,30 @@ public class TapirWordHandlerTest {
     }
 
     @Test
-    public void shouldPickRandomTapirFact() throws Exception {
-
+    public void shouldPickEquallyDistributedRandomTapirFactIndex()
+            throws Exception {
+        int n = 10;
+        int factor = 10;
+        for (int i = 0; i < n; i++) {
+            handler.addTapirFact(String.valueOf(i));
+        }
+        // pick n random numbers
+        ArrayList<Integer> list = new ArrayList<Integer>();
+        for (int i = 0; i < n * factor; i++) {
+            int randomNumber = handler.pickRandomNumber();
+            list.add(randomNumber);
+        }
+        // check if all 1 - n random numbers are retrieved
+        int sum = 0;
+        for (Integer integer : list) {
+            sum += integer + 1;
+        }
+        int computedSum = factor * (n * n + n) / 2;
+        Assert.assertEquals(computedSum, sum);
     }
 
     @Test
-    public void shouldBuildMessageWithFactNumber() throws Exception {
+    public void shouldBuildMessageWithFactIndex() throws Exception {
 
     }
 

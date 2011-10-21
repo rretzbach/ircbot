@@ -6,25 +6,30 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.schwering.irc.lib.IRCConnection;
 
+import com.gmail.rretzbach.ircbot.util.RandomUtil;
+
 public class TapirWordHandler extends ChainedMessageHandler implements
         MessageHandler {
     private static Logger log = Logger.getLogger(TapirWordHandler.class);
 
     private List<String> tapirFacts;
+    private Queue<Integer> shuffledFactIndexes;
 
     @Override
     public void handleMessage(IRCConnection conn, String target, String nick,
             String message) {
         if (isHandlingRequired(conn.getNick(), target, nick, message)) {
-            int factNumber = pickRandomNumber();
-            String tapirFact = tapirFacts.get(factNumber);
-            String finalMessage = buildMessage(factNumber, tapirFact);
+            int factIndex = pickRandomNumber();
+            String tapirFact = tapirFacts.get(factIndex);
+            String finalMessage = buildMessage(factIndex, tapirFact);
             try {
                 conn.doPrivmsg(target, finalMessage);
             } catch (Exception e) {
@@ -40,13 +45,20 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         }
     }
 
-    private String buildMessage(int factNumber, String tapirFact) {
-        return String.format("Tapir Fun Fact #%d: \"%s\"", factNumber,
+    private String buildMessage(int factIndex, String tapirFact) {
+        return String.format("Tapir Fun Fact #%d: \"%s\"", factIndex + 1,
                 tapirFact);
     }
 
-    private int pickRandomNumber() {
-        return (int) (Math.random() * tapirFacts.size());
+    protected int pickRandomNumber() {
+        if (shuffledFactIndexes == null || shuffledFactIndexes.isEmpty()) {
+            List<Integer> shuffledIndexes = RandomUtil
+                    .createShuffledIndexes(tapirFacts.size());
+            shuffledFactIndexes = new LinkedBlockingDeque<Integer>(
+                    shuffledIndexes);
+        }
+
+        return shuffledFactIndexes.remove();
     }
 
     protected boolean isHandlingRequired(String myNick, String target,
@@ -64,8 +76,6 @@ public class TapirWordHandler extends ChainedMessageHandler implements
     }
 
     public void loadFactsFromFile(String string) {
-        tapirFacts = new ArrayList<String>();
-
         InputStream resourceAsStream = getClass().getResourceAsStream(
                 "/" + string);
         BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -74,11 +84,19 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         String line = null;
         try {
             while ((line = reader.readLine()) != null) {
-                tapirFacts.add(line);
+                addTapirFact(line);
             }
         } catch (IOException e) {
             log.error(String.format("Error while loading file %s", string), e);
         }
+    }
+
+    protected void addTapirFact(String line) {
+        if (tapirFacts == null) {
+            tapirFacts = new ArrayList<String>();
+        }
+
+        tapirFacts.add(line);
     }
 
 }

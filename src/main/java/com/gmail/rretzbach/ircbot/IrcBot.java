@@ -10,6 +10,7 @@ import org.schwering.irc.lib.IRCUser;
 import com.gmail.rretzbach.ircbot.handler.MessageHandler;
 import com.gmail.rretzbach.ircbot.handler.TapirWordHandler;
 import com.gmail.rretzbach.ircbot.handler.WebLinkHandler;
+import com.gmail.rretzbach.ircbot.handler.WelcomeFryHandler;
 
 public class IrcBot extends IRCEventAdapter {
 
@@ -20,6 +21,8 @@ public class IrcBot extends IRCEventAdapter {
     private MessageHandler messageHandler;
     private IRCConnection connection;
 
+    private WelcomeFryHandler joinHandler;
+
     public static void main(String[] args) {
         log.info("Program started");
         IrcBotConfig connInfo = loadIrcConnectionInfo();
@@ -29,6 +32,7 @@ public class IrcBot extends IRCEventAdapter {
         tapirWordHandler.loadFactsFromFile("tapirfacts.txt");
         webLinkHandler.setNextMessageHandler(tapirWordHandler);
         ircBot.setMessageHandler(webLinkHandler);
+        ircBot.setJoinHandler(new WelcomeFryHandler());
         ircBot.connectAndStayConnected();
         log.info("Program exited");
     }
@@ -47,17 +51,10 @@ public class IrcBot extends IRCEventAdapter {
         return connInfo;
     }
 
-    private void setMessageHandler(MessageHandler handler) {
-        this.messageHandler = handler;
-    }
-
     public IrcBot(IrcBotConfig config) {
         this.config = config;
     }
 
-    /**
-     * Reconnects if error occurs or thread terminates
-     */
     protected void connectAndStayConnected() {
         try {
             this.connection = createIrcConnection();
@@ -68,9 +65,6 @@ public class IrcBot extends IRCEventAdapter {
         }
     }
 
-    /**
-     * Waits 5 seconds before trying to reconnect
-     */
     protected void reconnect() {
         log.info("Reconnecting");
         try {
@@ -123,5 +117,24 @@ public class IrcBot extends IRCEventAdapter {
         log.debug(String.format("Incoming message: [target=%s;nick=%s;msg=%s]",
                 target, user.getNick(), msg));
         messageHandler.handleMessage(connection, target, user.getNick(), msg);
+    }
+
+    @Override
+    public void onJoin(String chan, IRCUser user) {
+        if (joinHandler == null) {
+            return;
+        }
+
+        log.debug(String.format("Joined #%s: nick=%s,username=%s,host=%s",
+                chan, user.getNick(), user.getUsername(), user.getHost()));
+        joinHandler.onJoin(connection, chan, user);
+    }
+
+    private void setMessageHandler(MessageHandler handler) {
+        this.messageHandler = handler;
+    }
+
+    private void setJoinHandler(WelcomeFryHandler handler) {
+        this.joinHandler = handler;
     }
 }
