@@ -34,6 +34,7 @@ public class WelcomeFryHandlerTest {
     }
 
     @Test
+    @Ignore(value = "Long running test")
     public void shouldGreetFryWithDelay() throws Exception {
         final Date[] measures = new Date[2];
 
