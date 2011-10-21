@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -28,8 +29,7 @@ public class TapirWordHandler extends ChainedMessageHandler implements
             String message) {
         if (isHandlingRequired(conn.getNick(), target, nick, message)) {
             int factIndex = pickRandomNumber();
-            String tapirFact = tapirFacts.get(factIndex);
-            String finalMessage = buildMessage(factIndex, tapirFact);
+            String finalMessage = getTapirFact(factIndex);
             try {
                 conn.doPrivmsg(target, finalMessage);
             } catch (Exception e) {
@@ -43,6 +43,14 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         if (handler != null) {
             handler.handleMessage(conn, target, nick, message);
         }
+    }
+
+    public String getTapirFact(int index) {
+        String tapirFact = tapirFacts.get(index);
+        if (tapirFact == null) {
+            return "No fact found";
+        }
+        return buildMessage(index, tapirFact);
     }
 
     private String buildMessage(int factIndex, String tapirFact) {
@@ -79,7 +87,8 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         InputStream resourceAsStream = getClass().getResourceAsStream(
                 "/" + string);
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                resourceAsStream));
+                resourceAsStream, Charset.forName(System
+                        .getProperty("file.encoding"))));
 
         String line = null;
         try {
