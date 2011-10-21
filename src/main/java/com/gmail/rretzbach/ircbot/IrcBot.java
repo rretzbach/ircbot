@@ -31,6 +31,7 @@ public class IrcBot extends IRCEventAdapter {
         TapirWordHandler tapirWordHandler = new TapirWordHandler();
         tapirWordHandler.loadFactsFromFile("tapirfacts.txt");
         webLinkHandler.setNextMessageHandler(tapirWordHandler);
+        tapirWordHandler.setNextMessageHandler(new HelpWordHandler());
         ircBot.setMessageHandler(webLinkHandler);
         ircBot.setJoinHandler(new WelcomeFryHandler());
         ircBot.connectAndStayConnected();
