@@ -87,8 +87,7 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         InputStream resourceAsStream = getClass().getResourceAsStream(
                 "/" + string);
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                resourceAsStream, Charset.forName(System
-                        .getProperty("file.encoding"))));
+                resourceAsStream, Charset.forName("UTF-8")));
 
         String line = null;
         try {
