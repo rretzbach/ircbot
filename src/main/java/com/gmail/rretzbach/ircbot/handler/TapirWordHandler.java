@@ -1,9 +1,11 @@
 package com.gmail.rretzbach.ircbot.handler;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import com.gmail.rretzbach.ircbot.util.HandlerHelper;
+import com.gmail.rretzbach.ircbot.util.RandomUtil;
+import org.apache.log4j.Logger;
+import org.schwering.irc.lib.IRCConnection;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,33 +14,23 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
-import org.schwering.irc.lib.IRCConnection;
-
-import com.gmail.rretzbach.ircbot.util.RandomUtil;
-
 public class TapirWordHandler extends ChainedMessageHandler implements
         MessageHandler {
     private static Logger log = Logger.getLogger(TapirWordHandler.class);
 
     private List<String> tapirFacts;
     private Queue<Integer> shuffledFactIndexes;
+    private String tapirFactsFile;
 
     @Override
     public void handleMessage(IRCConnection conn, String target, String nick,
-            String message) {
+                              String message) {
         if (isHandlingRequired(conn.getNick(), target, nick, message)) {
             int factIndex = pickRandomNumber();
             String finalMessage = getTapirFact(factIndex);
-            try {
-                conn.doPrivmsg(target, finalMessage);
-            } catch (Exception e) {
-                log.error("Error while sending message", e);
-                log.debug(String.format(
-                        "Tried to send message %s to target %s", finalMessage,
-                        target));
-            }
+            HandlerHelper.sendMessage(conn, target, finalMessage);
         }
+
         MessageHandler handler = getNextMessageHandler();
         if (handler != null) {
             handler.handleMessage(conn, target, nick, message);
@@ -70,10 +62,9 @@ public class TapirWordHandler extends ChainedMessageHandler implements
     }
 
     protected boolean isHandlingRequired(String myNick, String target,
-            String nick, String message) {
-        boolean containsTapirWord = containsTapirWord(message);
+                                         String nick, String message) {
         boolean myMessage = myNick.equals(nick);
-        return containsTapirWord && !myMessage;
+        return containsTapirWord(message) && !myMessage;
     }
 
     private boolean containsTapirWord(String message) {
@@ -83,19 +74,27 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         return matcher.find();
     }
 
-    public void loadFactsFromFile(String string) {
-        InputStream resourceAsStream = getClass().getResourceAsStream(
-                "/" + string);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                resourceAsStream, Charset.forName("UTF-8")));
+    public void loadFactsFromFile(String fileName) {
+        tapirFactsFile = fileName;
 
-        String line = null;
+        String home = System.getProperty("user.home");
+
+        InputStream resourceAsStream = null;
         try {
+            resourceAsStream = new FileInputStream(new File(new File(home, "Shared"), tapirFactsFile));
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    resourceAsStream, Charset.forName("UTF-8")));
+
+            shuffledFactIndexes = null;
+            tapirFacts = null;
+
+            String line = null;
             while ((line = reader.readLine()) != null) {
                 addTapirFact(line);
             }
         } catch (IOException e) {
-            log.error(String.format("Error while loading file %s", string), e);
+            log.error(String.format("Error while loading file %s", tapirFactsFile), e);
         }
     }
 
@@ -107,4 +106,7 @@ public class TapirWordHandler extends ChainedMessageHandler implements
         tapirFacts.add(line);
     }
 
+    public void reload() {
+        loadFactsFromFile(tapirFactsFile);
+    }
 }

@@ -1,5 +1,6 @@
 package com.gmail.rretzbach.ircbot.handler;
 
+import com.gmail.rretzbach.ircbot.util.HandlerHelper;
 import org.apache.log4j.Logger;
 import org.schwering.irc.lib.IRCConnection;
 import org.schwering.irc.lib.IRCEventAdapter;
@@ -23,9 +24,7 @@ public class WelcomeFryHandler {
                         @Override
                         public void onPrivmsg(String target, IRCUser user, String msg) {
                             if (msg.startsWith("fry")) {
-                                String[] dyingMessages = new String[]{"I don't blame you", "Why?", "I don't hate you", "No hard feelings"};
-                                String dyingMessage = dyingMessages[(int) (Math.random() * dyingMessages.length)];
-                                conn.doPrivmsg(chan, dyingMessage);
+                                conn.doPrivmsg(chan, HandlerHelper.chooseOne("I don't blame you", "Why?", "I don't hate you", "No hard feelings"));
                                 conn.removeIRCEventListener(this);
                                 thisThread.interrupt();
                             }
@@ -39,7 +38,7 @@ public class WelcomeFryHandler {
                     } catch (InterruptedException e) {
                         log.error("Could not sleep current thread", e);
                     }
-                };
+                }
             }.start();
         }
     }
@@ -55,10 +54,9 @@ public class WelcomeFryHandler {
     }
 
     protected boolean isFry(IRCUser user) {
+        String userName = "fry";
         try {
-            int nextPoint = user.getHost().indexOf(".");
-            String authUser = user.getHost().substring(0, nextPoint);
-            return authUser.equals("fry");
+            return HandlerHelper.isUser(user, userName);
         } catch (Exception e) {
             return false;
         }

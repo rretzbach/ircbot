@@ -2,15 +2,11 @@ package com.gmail.rretzbach.ircbot;
 
 import java.io.IOException;
 
+import com.gmail.rretzbach.ircbot.handler.*;
 import org.apache.log4j.Logger;
 import org.schwering.irc.lib.IRCConnection;
 import org.schwering.irc.lib.IRCEventAdapter;
 import org.schwering.irc.lib.IRCUser;
-
-import com.gmail.rretzbach.ircbot.handler.MessageHandler;
-import com.gmail.rretzbach.ircbot.handler.TapirWordHandler;
-import com.gmail.rretzbach.ircbot.handler.WebLinkHandler;
-import com.gmail.rretzbach.ircbot.handler.WelcomeFryHandler;
 
 public class IrcBot extends IRCEventAdapter {
 
@@ -18,24 +14,51 @@ public class IrcBot extends IRCEventAdapter {
 
     private static final int RECONNECT_DELAY_SECS = 5000;
     private final IrcBotConfig config;
+    private static IrcBot ircBot;
+
+    public static IrcBot getIrcBot() {
+        return ircBot;
+    }
+
+    public MessageHandler getMessageHandler() {
+        return messageHandler;
+    }
+
     private MessageHandler messageHandler;
     private IRCConnection connection;
+
+    public WelcomeFryHandler getJoinHandler() {
+        return joinHandler;
+    }
 
     private WelcomeFryHandler joinHandler;
 
     public static void main(String[] args) {
         log.info("Program started");
         IrcBotConfig connInfo = loadIrcConnectionInfo();
-        IrcBot ircBot = new IrcBot(connInfo);
-        MessageHandler webLinkHandler = new WebLinkHandler();
-        TapirWordHandler tapirWordHandler = new TapirWordHandler();
-        tapirWordHandler.loadFactsFromFile("tapirfacts.txt");
-        webLinkHandler.setNextMessageHandler(tapirWordHandler);
-        tapirWordHandler.setNextMessageHandler(new HelpWordHandler());
-        ircBot.setMessageHandler(webLinkHandler);
+        ircBot = new IrcBot(connInfo);
+
+        MessageHandler handler = linkMessageHandlers();
+
+        ircBot.setMessageHandler(handler);
         ircBot.setJoinHandler(new WelcomeFryHandler());
         ircBot.connectAndStayConnected();
-        log.info("Program exited");
+    }
+
+    private static MessageHandler linkMessageHandlers() {
+        MessageHandler reloadHandler = new ReloadCommandHandler();
+        MessageHandler frownHandler = new TurnYourFrownUpsideDownHandler();
+        MessageHandler webLinkHandler = new WebLinkHandler();
+        HelpWordHandler helpWordHandler = new HelpWordHandler();
+        TapirWordHandler tapirWordHandler = new TapirWordHandler();
+        tapirWordHandler.loadFactsFromFile("tapirfacts.txt");
+
+        webLinkHandler.setNextMessageHandler(tapirWordHandler);
+        tapirWordHandler.setNextMessageHandler(helpWordHandler);
+        helpWordHandler.setNextMessageHandler(frownHandler);
+        frownHandler.setNextMessageHandler(reloadHandler);
+
+        return webLinkHandler;
     }
 
     // TODO read in properties file

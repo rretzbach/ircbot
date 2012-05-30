@@ -42,6 +42,7 @@ public class WebLinkHandler extends ChainedMessageHandler {
                 }
             }
         }
+
         MessageHandler handler = getNextMessageHandler();
         if (handler != null) {
             handler.handleMessage(conn, target, nick, message);
