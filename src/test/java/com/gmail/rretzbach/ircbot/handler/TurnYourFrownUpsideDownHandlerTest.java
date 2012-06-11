@@ -24,14 +24,14 @@ public class TurnYourFrownUpsideDownHandlerTest {
 
     @Test
     public void shouldFetchRedditAww() {
-        List<String> json = handler.getAwwUrls();
-        assertNotNull(json);
+        //List<String> json = handler.getRedditImgurURLs("aww");
+        //assertNotNull(json);
     }
 
     @Test
     public void shouldFetchRandomAwwURL() {
-        String url = handler.fetchRandomAwwURL();
-        assertNotNull(url);
+        //String url = handler.fetchRandomAwwURL();
+        //assertNotNull(url);
     }
 
     @Test
@@ -88,6 +88,31 @@ public class TurnYourFrownUpsideDownHandlerTest {
         {
             boolean result = handler.isHandlingRequired(null, null, null, ":<");
             assertTrue(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, "():-(");
+            assertTrue(result);
+        }
+        // negative cases
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, ">:)");
+            assertFalse(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, "(:<");
+            assertFalse(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, ">:-D");
+            assertFalse(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, "():-)");
+            assertFalse(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, "(-:()");
+            assertFalse(result);
         }
     }
 

@@ -49,14 +49,21 @@ public class TurnYourFrownUpsideDownHandler extends ChainedMessageHandler implem
     }
 
     protected String fetchRandomAwwURL() {
-        return HandlerHelper.chooseOne(getAwwUrls());
+        List<String> urlPool = new ArrayList<String>();
+        urlPool.addAll(getRedditImgurURLs("aww"));
+        urlPool.addAll(getRedditImgurURLs("animalporn"));
+        urlPool.addAll(getRedditImgurURLs("rabbits"));
+        urlPool.addAll(getRedditImgurURLs("foxes"));
+        urlPool.addAll(getRedditImgurURLs("hedgehogs"));
+        urlPool.addAll(getRedditImgurURLs("ferrets"));
+        return HandlerHelper.chooseOne(urlPool);
     }
 
-    protected List<String> getAwwUrls() {
+    protected List<String> getRedditImgurURLs(String subreddit) {
         List<String> urls = null;
 
         try {
-            URI url = new URI("http://www.reddit.com/r/aww.json");
+            URI url = new URI("http://www.reddit.com/r/"+subreddit+".json");
             DefaultHttpClient client = new DefaultHttpClient();
             HttpGet get = new HttpGet(url);
             HttpResponse response = client.execute(get);
@@ -83,7 +90,7 @@ public class TurnYourFrownUpsideDownHandler extends ChainedMessageHandler implem
 
     protected boolean isHandlingRequired(String myNick, String target,
                                          String nick, String message) {
-        Pattern frownPattern = Pattern.compile("[:;][-'´`]?[(<Cc]|[)>D][-'´`]?[:;]");
+        Pattern frownPattern = Pattern.compile("(?<![->(])[:;][-'´`]?[(<Cc]|[)>D][-'´`]?[:;](?![)<-])");
         return frownPattern.matcher(message).find();
     }
 }
