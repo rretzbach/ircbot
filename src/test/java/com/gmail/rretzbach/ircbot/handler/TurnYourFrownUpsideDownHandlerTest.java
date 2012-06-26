@@ -24,7 +24,11 @@ public class TurnYourFrownUpsideDownHandlerTest {
 
     @Test
     public void shouldFetchRedditAww() {
-        //List<String> json = handler.getRedditImgurURLs("aww");
+        //List<String> json = handler.getRedditImgurURLs("ferrets");
+        //System.out.println(json.size());
+        //for (String url : json) {
+        //    System.out.println(url);
+        //}
         //assertNotNull(json);
     }
 
@@ -60,7 +64,6 @@ public class TurnYourFrownUpsideDownHandlerTest {
             boolean result = handler.isHandlingRequired(null, null, null, ";(");
             assertTrue(result);
         }
-
         {
             boolean result = handler.isHandlingRequired(null, null, null, "):");
             assertTrue(result);
@@ -93,6 +96,14 @@ public class TurnYourFrownUpsideDownHandlerTest {
             boolean result = handler.isHandlingRequired(null, null, null, "():-(");
             assertTrue(result);
         }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, "():<");
+            assertTrue(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, ">-:()");
+            assertTrue(result);
+        }
         // negative cases
         {
             boolean result = handler.isHandlingRequired(null, null, null, ">:)");
@@ -112,6 +123,10 @@ public class TurnYourFrownUpsideDownHandlerTest {
         }
         {
             boolean result = handler.isHandlingRequired(null, null, null, "(-:()");
+            assertFalse(result);
+        }
+        {
+            boolean result = handler.isHandlingRequired(null, null, null, ">:D");
             assertFalse(result);
         }
     }

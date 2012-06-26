@@ -14,9 +14,7 @@ import org.schwering.irc.lib.IRCConnection;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -56,6 +54,8 @@ public class TurnYourFrownUpsideDownHandler extends ChainedMessageHandler implem
         urlPool.addAll(getRedditImgurURLs("foxes"));
         urlPool.addAll(getRedditImgurURLs("hedgehogs"));
         urlPool.addAll(getRedditImgurURLs("ferrets"));
+        urlPool.addAll(getRedditImgurURLs("corgy"));
+        urlPool.addAll(getRedditImgurURLs("otters"));
         return HandlerHelper.chooseOne(urlPool);
     }
 
@@ -76,7 +76,16 @@ public class TurnYourFrownUpsideDownHandler extends ChainedMessageHandler implem
             for (Iterator<JsonElement> it = foo.iterator(); it.hasNext(); ) {
                 JsonElement post = it.next();
                 String link = post.getAsJsonObject().get("data").getAsJsonObject().get("url").getAsString();
-                if (link.contains("imgur.com")) {
+                Calendar createdAt = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                // turn seconds into millis
+                String createdAtSecondsUTC = post.getAsJsonObject().get("data").getAsJsonObject().get("created").getAsString();
+
+                createdAt.setTimeInMillis(Long.valueOf(createdAtSecondsUTC.substring(0,createdAtSecondsUTC.indexOf('.'))) * 1000);
+                Calendar ageLimit = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                ageLimit.roll(java.util.Calendar.DATE, -3);
+
+                if (link.contains("imgur.com") && createdAt.after(ageLimit)) {
+                    System.out.println("added");
                     urls.add(link);
                 }
             }
@@ -90,7 +99,7 @@ public class TurnYourFrownUpsideDownHandler extends ChainedMessageHandler implem
 
     protected boolean isHandlingRequired(String myNick, String target,
                                          String nick, String message) {
-        Pattern frownPattern = Pattern.compile("(?<![->(])[:;][-'´`]?[(<Cc]|[)>D][-'´`]?[:;](?![)<-])");
+        Pattern frownPattern = Pattern.compile("(?<![>(-])[:;][-'´`]?[(<Cc]|[)>D][-'´`]?[:;](?![)<D-])");
         return frownPattern.matcher(message).find();
     }
 }

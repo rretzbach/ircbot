@@ -23,7 +23,7 @@ public class WelcomeFryHandler {
                     final IRCEventAdapter eventAdapter = new IRCEventAdapter() {
                         @Override
                         public void onPrivmsg(String target, IRCUser user, String msg) {
-                            if (msg.startsWith("fry")) {
+                            if (msg.contains("fryy") || HandlerHelper.isUser(user, "fry")) {
                                 conn.doPrivmsg(chan, HandlerHelper.chooseOne("I don't blame you", "Why?", "I don't hate you", "No hard feelings"));
                                 conn.removeIRCEventListener(this);
                                 thisThread.interrupt();
